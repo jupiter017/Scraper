@@ -106,10 +106,10 @@ Optional arguments:
 Examples:
 
 ```
-# Scrape every 4 hours with 3 minutes for manual login.  
+# John will scrape his best matches every 4 hours (default) with 3 minutes (default) for manual login.  
 python scraper.py --name "John"
 
-# Scrape every 10 hours with 1 minute for manual login.  
+# Ruby will scrape her best matches every 10 hours with 1 minute for manual login.  
 python scraper.py --name "Ruby" -P 60 -H 10
 ```
 
