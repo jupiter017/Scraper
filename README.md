@@ -89,11 +89,14 @@ This program has been tested and verified to work correctly in Python 3.11.
 ## Usage
 
 
-Run the script with the following command (YOUR NAME is the first name shown in your user profile):
+Run Upwork Scraper with the following command:
 
 ```bash
 python scraper.py --name YOUR_NAME
 ```
+
+IMPORTANT: Replace `YOUR_NAME` with the **first name** shown next to your profile picture on the right side panel. So if the name shown next to your profile pic says "John Smith" provide the script with `John`.
+ Login and navigate to [best matches](https://www.upwork.com/nx/find-work/best-matches) to double check what is the first name of your full name that appears on your profile description. 
 
 Optional arguments:
 
