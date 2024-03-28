@@ -100,17 +100,18 @@ IMPORTANT: Replace `YOUR_NAME` with the **first name** shown next to your profil
 
 Optional arguments:
 
+--chrome_version, -v: Chrome version to use.
 --hours, -H: Interval in hours between scraping jobs. Default is 4 hours.  
 --pause, -P: Number of seconds to pause for manual login. Default is 180 seconds.
 
 Examples:
 
 ```
-# John will scrape his best matches every 4 hours (default) with 3 minutes (default) for manual login.  
+# John will scrape his best matches every 4 hours (default) with 3 minutes (default) for manual login in Chrome version 90 (default).
 python scraper.py --name "John"
 
-# Ruby will scrape her best matches every 10 hours with 1 minute for manual login.  
-python scraper.py --name "Ruby" -P 60 -H 10
+# Ruby will scrape her best matches every 10 hours with 1 minute for manual login, using Chrome version 123.
+python scraper.py --name "Ruby" -P 60 -H 10 -v 123
 ```
 
 ## Functionality
