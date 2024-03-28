@@ -115,7 +115,7 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
         driver.get(url)
 
         # Manually Login
-        print(f'You have {pause_to_login} seconds to manually login to Upwork.')
+        print(f'You have {pause_to_login} seconds to manually login to Upwork and go to `https://www.upwork.com/nx/find-work/best-matches`')
         time.sleep(pause_to_login)
 
         # Define the refresh interval in seconds
