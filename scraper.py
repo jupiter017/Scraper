@@ -77,11 +77,12 @@ def create_db(conn, cursor):
     conn.commit()
 
 
-def main(user_name, num_hours, pause_to_login):
+def main(chrome_version, user_name, num_hours, pause_to_login):
     """
     Main function for scraping job postings from Upwork.
 
     Parameters:
+    - chrome_version (int): Chrome version.
     - user_name (str): The user name in Upwork (case sensitive).
     - num_hours (int): Number of hours between scraping jobs.
     - pause_to_login (int): Seconds to pause for manual login.
@@ -107,7 +108,7 @@ def main(user_name, num_hours, pause_to_login):
         options.headless = False
 
         # Configure the undetected_chromedriver options
-        driver = uc.Chrome(options=options, version_main=90)
+        driver = uc.Chrome(options=options, version_main=chrome_version)
 
         # Go to url
         url = 'https://www.upwork.com/ab/account-security/login?redir=%2Fnx%2Ffind-work%2Fbest-matches'
@@ -202,6 +203,7 @@ def main(user_name, num_hours, pause_to_login):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Scrape jobs from Upwork's best matches.")
+    parser.add_argument('--chrome_version', '-v', type=int, default=90, help='Chrome version to use.')
     parser.add_argument('--hours', '-H', type=int, default=4,
                         help='Interval in hours between scraping jobs. Default is 4 hours.')
     parser.add_argument('--pause', '-P', type=int, default=180,
@@ -214,5 +216,6 @@ if __name__ == '__main__':
     name = args.name
     hours = args.hours
     pause = args.pause
+    version = args.chrome_version
 
-    main(name, hours, pause)
+    main(version, name, hours, pause)
