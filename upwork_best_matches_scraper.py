@@ -149,29 +149,42 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
             text_1 = text.split(user_name)[0]
             # Get rid of the top panel
             text_2 = text_1.split('Ordered by most relevant.')[-1]
-            job_posts = text_2.split('Posted')
+            job_posts = text_2.split('Posted')[1:]
+
+            # Get urls
+            job_links = driver.find_elements("xpath", "//a[contains(@href, '/jobs/')]")
+            job_urls = [link.get_attribute("href") for link in job_links
+                        if 'ontology_skill_uid' not in link.get_attribute("href")
+                        and 'search/saved' not in link.get_attribute("href")]
 
             # Scrape jobs
             print('Scraping jobs...')
-            for j in job_posts[1:]:
+            counter = 0
+            for j in job_posts:
                 job_details = parse_job_details(j.split('\n'))
                 # Check if the job ID already exists in the database
                 job_id = job_details.get('job_id')
+                job_url = job_urls[counter].split('/?')[0]
                 cursor.execute('SELECT COUNT(*) FROM jobs WHERE job_id = ?', (job_id,))
                 count = cursor.fetchone()[0]
                 if count > 0:
-                    print(f'    Job ID #{job_id} already exists. Skipping this job')
-                    continue
-                job_id = job_details.get('job_id')
-                job_title = job_details.get('job_title')
-                job_description = job_details.get('job_description')
-                job_tags = job_details.get('job_tags')
-                job_proposals = job_details.get('job_proposals')
-                # Write to db
-                print(f'Storing `{job_details.get("job_title")}` job in database')
-                cursor.execute('INSERT INTO jobs (job_id, job_title, job_description, job_tags, job_proposals) '
-                               'VALUES (?, ?, ?, ?, ?)', (job_id, job_title, job_description, job_tags, job_proposals))
+                    print(f'    Job ID #{job_id} already exists. Updating job proposals...')
+                    updated_proposals = job_details.get('job_proposals')
+                    # Update the job_proposals column
+                    cursor.execute('UPDATE jobs SET job_proposals = ?, job_url = ? WHERE job_id = ?', (
+                        updated_proposals, job_url, job_id))
+                else:
+                    job_title = job_details.get('job_title')
+                    job_description = job_details.get('job_description')
+                    job_tags = job_details.get('job_tags')
+                    job_proposals = job_details.get('job_proposals')
+                    print(f'Storing `{job_details.get("job_title")}` job in database')
+                    cursor.execute(
+                        'INSERT INTO jobs (job_id, job_url, job_title, job_description, job_tags, job_proposals) '
+                        'VALUES (?, ?, ?, ?, ?, ?)',
+                        (job_id, job_url, job_title, job_description, job_tags, job_proposals))
                 conn.commit()
+                counter += 1
 
             # Close connection to db
             print('Closing connection to database')
