@@ -125,7 +125,7 @@ Upwork Scraper performs the following tasks:
 Contributions are welcome! If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request.
 
 ## TODO
-- Capture job URL
+- Capture job URLs ✅
 
 
 ## Copyright and licenses
