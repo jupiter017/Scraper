@@ -195,7 +195,7 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
             print('Reconnecting to database')
             conn, cursor = connect_to_db()
 
-        return True  # This is unreachable but I'm putting it there anyway
+        return True  # This is unreachable but I'm putting it here anyway
 
     except Exception as e:
         print(e)
