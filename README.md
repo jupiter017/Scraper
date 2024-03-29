@@ -99,10 +99,9 @@ IMPORTANT: Replace `YOUR_NAME` with the **first name** shown next to your profil
  Login and navigate to [best matches](https://www.upwork.com/nx/find-work/best-matches) to double check what is the first name of your full name that appears on your profile description. 
 
 Optional arguments:
-
---chrome_version, -v: Chrome version to use.
---hours, -H: Interval in hours between scraping jobs. Default is 4 hours.  
---pause, -P: Number of seconds to pause for manual login. Default is 180 seconds.
+* --chrome_version, -v: Chrome version to use.
+* --hours, -H: Interval in hours between scraping jobs. Default is 4 hours.  
+* --pause, -P: Number of seconds to pause for manual login. Default is 180 seconds.
 
 Examples:
 
@@ -133,4 +132,3 @@ Contributions are welcome! If you encounter any issues or have suggestions for i
 Copyright © 2024 roperi. 
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
