@@ -119,7 +119,7 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
         time.sleep(pause_to_login)
 
         # Force driver to go to best matches
-        print("If after login redirection fails, I'll take you to Best Matches anyway")
+        print("If after-login redirection fails, I'll take you to Best Matches anyway")
         driver.get('https://www.upwork.com/nx/find-work/best-matches')
         time.sleep(30)
 
