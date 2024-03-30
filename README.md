@@ -126,7 +126,8 @@ Contributions are welcome! If you encounter any issues or have suggestions for i
 
 ## TODO
 - Capture job URLs ✅
-
+- Capture job timestamp ✅
+- Load more jobs
 
 ## Copyright and licenses
 Copyright © 2024 roperi. 
