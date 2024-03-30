@@ -248,10 +248,10 @@ if __name__ == '__main__':
     parser.add_argument('--chrome_version', '-v', type=int, default=90, help='Chrome version to use.')
     parser.add_argument('--hours', '-H', type=int, default=4,
                         help='Interval in hours between scraping jobs. Default is 4 hours.')
-    parser.add_argument('--pause', '-P', type=int, default=180,
-                        help='Number of seconds to pause for manual login. Default is 180 seconds.')
+    parser.add_argument('--pause', '-P', type=int, default=60,
+                        help='Number of seconds to pause for manual login. Default is 60 seconds.')
     parser.add_argument('--name', '-n', required=True,
-                        help='Your Upwork username (case-sensitive). This argument is required.')
+                        help='Your Upwork first name (case-sensitive). This argument is required.')
 
     args = parser.parse_args()
 
