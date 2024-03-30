@@ -5,7 +5,8 @@ import time
 import sqlite3
 import hashlib
 import json
-import datetime
+from datetime import datetime, timedelta
+import re
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -29,6 +30,22 @@ def generate_job_id(job_title):
     return hashlib.md5(job_title_bytes).hexdigest()
 
 
+def calculate_posted_datetime(timestamp):
+    now = datetime.now()
+    if 'yesterday' in timestamp:
+        posted_datetime = now - timedelta(days=1)
+    elif 'hour' in timestamp:
+        hours_ago = int(re.findall(r'\d+', timestamp)[0])
+        posted_datetime = now - timedelta(hours=hours_ago)
+    elif 'day' in timestamp:
+        days_ago = int(re.findall(r'\d+', timestamp)[0])
+        posted_datetime = now - timedelta(days=days_ago)
+    else:
+        # Handle other cases if needed
+        posted_datetime = now
+    return posted_datetime
+
+
 def parse_job_details(r):
     """
     Parse job details from a given row of data.
@@ -39,7 +56,12 @@ def parse_job_details(r):
     Returns:
     - dict: A dictionary containing parsed job details.
     """
-    d = {'job_title': r[1], 'job_description': r[5], 'job_proposals': r[-2].replace('Proposals: ', '')}
+    d = {
+        'posted_date': calculate_posted_datetime(r[0]),
+        'job_title': r[1],
+        'job_description': r[5],
+        'job_proposals': r[-2].replace('Proposals: ', '')
+    }
     skills = r[6:-6]
     if 'more' in skills:
         skills.remove('more')
@@ -68,6 +90,7 @@ def create_db(conn, cursor):
             job_id TEXT NOT NULL,
             job_url TEXT,
             job_title TEXT NOT NULL,
+            posted_date DATETIME,
             job_description TEXT NOT NULL,
             job_tags TEXT,
             job_proposals TEXT,
@@ -174,15 +197,16 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
                     cursor.execute('UPDATE jobs SET job_proposals = ?, job_url = ? WHERE job_id = ?', (
                         updated_proposals, job_url, job_id))
                 else:
+                    posted_date = job_details.get('posted_date')
                     job_title = job_details.get('job_title')
                     job_description = job_details.get('job_description')
                     job_tags = job_details.get('job_tags')
                     job_proposals = job_details.get('job_proposals')
                     print(f'Storing `{job_details.get("job_title")}` job in database')
                     cursor.execute(
-                        'INSERT INTO jobs (job_id, job_url, job_title, job_description, job_tags, job_proposals) '
-                        'VALUES (?, ?, ?, ?, ?, ?)',
-                        (job_id, job_url, job_title, job_description, job_tags, job_proposals))
+                        'INSERT INTO jobs (job_id, job_url, job_title, posted_date, job_description, job_tags, '
+                        'job_proposals) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                        (job_id, job_url, job_title, posted_date, job_description, job_tags, job_proposals))
                 conn.commit()
                 counter += 1
 
@@ -193,7 +217,7 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
 
             # Calculate the new datetime by adding n hours to the current datetime
             formatted_datetime = (
-                    datetime.datetime.now() + datetime.timedelta(hours=num_hours)
+                    datetime.now() + timedelta(hours=num_hours)
             ).strftime("%d %b %Y %I:%M%p")
             print(f"Scraping again at {formatted_datetime}")
 
