@@ -1,103 +1,15 @@
-# Copyright © 2024 roperi
+# Copyright (c) 2024 roperi
 
 import argparse
 import time
-import sqlite3
-import hashlib
-import json
 from datetime import datetime, timedelta
-import re
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-
-
-def generate_job_id(job_title):
-    """
-    Generate a unique job ID based on the given job title.
-
-    Parameters:
-    - job_title (str): The title of the job.
-
-    Returns:
-    - str: The generated job ID.
-    """
-    # Convert the job title to lowercase and encode it as UTF-8
-    job_title_bytes = job_title.lower().encode('utf-8')
-    # Generate an MD5 hash of the job title
-    return hashlib.md5(job_title_bytes).hexdigest()
-
-
-def calculate_posted_datetime(timestamp):
-    now = datetime.now()
-    if 'yesterday' in timestamp:
-        posted_datetime = now - timedelta(days=1)
-    elif 'hour' in timestamp:
-        hours_ago = int(re.findall(r'\d+', timestamp)[0])
-        posted_datetime = now - timedelta(hours=hours_ago)
-    elif 'day' in timestamp:
-        days_ago = int(re.findall(r'\d+', timestamp)[0])
-        posted_datetime = now - timedelta(days=days_ago)
-    else:
-        # Handle other cases if needed
-        posted_datetime = now
-    return posted_datetime
-
-
-def parse_job_details(r):
-    """
-    Parse job details from a given row of data.
-
-    Parameters:
-    - r (list): A list containing job details.
-
-    Returns:
-    - dict: A dictionary containing parsed job details.
-    """
-    d = {
-        'posted_date': calculate_posted_datetime(r[0]),
-        'job_title': r[1],
-        'job_description': r[5],
-        'job_proposals': r[-2].replace('Proposals: ', '')
-    }
-    skills = r[6:-6]
-    if 'more' in skills:
-        skills.remove('more')
-        skills.pop(0)
-    if 'Next skills. Update list' in skills:
-        skills.remove('Next skills. Update list')
-    if 'Skip skills' in skills:
-        skills.remove('Skip skills')
-    d['job_tags'] = json.dumps(skills)
-    d['job_id'] = generate_job_id(r[1])
-    return d
-
-
-def connect_to_db(database_name='upwork_jobs.db'):
-    # Connect to database
-    conn = sqlite3.connect(database_name)
-    cursor = conn.cursor()
-    return conn, cursor
-
-
-def create_db(conn, cursor):
-    # Create the `jobs` table (if it doesn't exist)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS jobs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            job_id TEXT NOT NULL,
-            job_url TEXT,
-            job_title TEXT NOT NULL,
-            posted_date DATETIME,
-            job_description TEXT NOT NULL,
-            job_tags TEXT,
-            job_proposals TEXT,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
+from utils.job_helpers import parse_job_details
+from utils.database import create_db, connect_to_db
 
 
 def main(chrome_version, user_name, num_hours, pause_to_login):
@@ -106,7 +18,7 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
 
     Parameters:
     - chrome_version (int): Chrome version.
-    - user_name (str): The user name in Upwork (case sensitive).
+    - user_name (str): The first name of the user name in Upwork (case sensitive).
     - num_hours (int): Number of hours between scraping jobs.
     - pause_to_login (int): Seconds to pause for manual login.
 
@@ -232,7 +144,7 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
             print('Reconnecting to database')
             conn, cursor = connect_to_db()
 
-        return True  # This is unreachable but I'm putting it here anyway
+        return True  # This is unreachable but we are leaving it here anyway
 
     except Exception as e:
         print(e)
