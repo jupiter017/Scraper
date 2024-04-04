@@ -89,6 +89,7 @@ bin/
 log/
 tmp/
 config.py
+settings/
 
 # Gunicorn
 run/
