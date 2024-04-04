@@ -1,8 +1,9 @@
 # Copyright (c) 2024 roperi
 
-import argparse
+import os
+import sys
 import time
-from datetime import datetime, timedelta
+import logging
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -10,17 +11,55 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from utils.job_helpers import parse_job_details
 from utils.database import create_db, connect_to_db
+from settings import config
 
 
-def main(chrome_version, user_name, num_hours, pause_to_login):
+# LOGGING
+
+# Create logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+# Get paths
+scriptdir = os.path.dirname(os.path.abspath(__file__))
+logdir = os.path.join(scriptdir, 'log')
+if not os.path.exists(logdir):
+    os.makedirs(logdir)
+mypath = os.path.join(logdir, 'upwork_best_matches_scraper.log')
+# Create file handler which logs even DEBUG messages
+fh = logging.FileHandler(mypath)
+fh.setLevel(logging.DEBUG)
+# Create console handler
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(logging.DEBUG)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('[%(levelname)s. %(name)s, (line #%(lineno)d) - %(asctime)s] %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+# add handlers to logger
+logger.addHandler(fh)
+logger.addHandler(ch)
+
+
+# FUNCTIONS
+
+def get_driver_with_retry(chrome_versions, max_attempts=3):
+    for attempt in range(max_attempts):
+        for chrome_version in chrome_versions:
+            logger.info(f'Trying with Chrome version {chrome_version}')
+            try:
+                logger.info(f'Attempt #{attempt+1}/{max_attempts}')
+                options = uc.ChromeOptions()
+                options.headless = False
+                return uc.Chrome(options=options, version_main=chrome_version)
+            except Exception as e:
+                logger.error(f"Failed to launch Chrome driver with version {chrome_version}. Retrying...")
+    logger.error(f"All attempts failed for all Chrome versions within {max_attempts} attempts. Unable to launch Chrome driver.")
+    return None
+
+
+def main():
     """
     Main function for scraping job postings from Upwork.
-
-    Parameters:
-    - chrome_version (int): Chrome version.
-    - user_name (str): The first name of the user name in Upwork (case sensitive).
-    - num_hours (int): Number of hours between scraping jobs.
-    - pause_to_login (int): Seconds to pause for manual login.
 
     Returns:
         bool: True if the scraping process completed successfully, False otherwise.
@@ -38,33 +77,72 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
         # Create table (if it does not exist)
         create_db(conn, cursor)
 
-        # Add the driver options
-        options = uc.ChromeOptions()
-        options.headless = False
-
         # Configure the undetected_chromedriver options
-        driver = uc.Chrome(options=options, version_main=chrome_version)
+        logger.info('Launching driver')
+        driver = get_driver_with_retry(chrome_versions=config.CHROME_VERSIONS, max_attempts=config.MAX_ATTEMPTS)
 
-        # Go to url
-        url = 'https://www.upwork.com/ab/account-security/login?redir=%2Fnx%2Ffind-work%2Fbest-matches'
-        driver.get(url)
+        if driver:
+            # Login
+            user_login_page = 'https://www.upwork.com/ab/account-security/login'
+            logger.info(f'Navigating to `{user_login_page}`')
+            driver.get(user_login_page)
+            logger.info('Pausing for windows to fully load')
+            time.sleep(25)
 
-        # Manually Login
-        print(f'You have {pause_to_login} seconds to manually login to Upwork')
-        time.sleep(pause_to_login)
+            logger.info('Switching to main window')
+            all_windows = driver.window_handles
+            driver.switch_to.window(all_windows[-1])
 
-        # Force driver to go to best matches
-        print("If after-login redirection fails, I'll take you to Best Matches anyway")
-        driver.get('https://www.upwork.com/nx/find-work/best-matches')
-        time.sleep(30)
+            logger.info('Submitting username')
+            username_input = WebDriverWait(driver, 30).until(
+                EC.visibility_of_element_located(
+                    (By.XPATH,
+                     "/html/body/div[4]/div/div/div/main/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div/div/"
+                     "input")
+                )
+            )
+            username_input.send_keys(config.UPWORK_USERNAME)
 
-        # Define the refresh interval in seconds
-        refresh_interval = num_hours * 60 * 60
+            username_field = WebDriverWait(driver, 30).until(
+                EC.visibility_of_element_located(
+                    (By.XPATH,
+                     "/html/body/div[4]/div/div/div/main/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div/div/"
+                     "input")
+                )
+            )
+            username_field.send_keys(Keys.ENTER)
 
-        # Start an infinite loop
-        while True:
+            logger.info('Submitting password')
+            password_input = WebDriverWait(driver, 30).until(
+                EC.visibility_of_element_located(
+                    (By.XPATH,
+                     "/html/body/div[4]/div/div/div/main/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div"
+                     "/input")
+                )
+
+            )
+            password_input.send_keys(config.UPWORK_PASSWORD)
+
+            password_field = WebDriverWait(driver, 30).until(
+                EC.visibility_of_element_located(
+                    (By.XPATH,
+                     "/html/body/div[4]/div/div/div/main/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div"
+                     "/input")
+                )
+
+            )
+            password_field.send_keys(Keys.ENTER)
+
+            logger.info('Pausing 10 seconds for credentials verification')
+            time.sleep(10)
+
+            # Go to target url
+            logger.info("Redirecting to Best Matches")
+            driver.get('https://www.upwork.com/nx/find-work/best-matches')
+            time.sleep(10)
+
             # Scroll down using keyboard actions
-            print('Scrolling down page')
+            logger.info('Scrolling down page')
             body = driver.find_elements('xpath', "/html/body")
             for i in range(0, 12):  # Just an arbitrary number of page downs
                 body[-1].send_keys(Keys.PAGE_DOWN)
@@ -73,7 +151,7 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
             timeout_wait = 300
 
             # Wait for element to load
-            print(f'Waiting for element to load (max timeout set to {timeout_wait} seconds)...')
+            logger.info(f'Waiting for element to load (max timeout set to {timeout_wait} seconds)...')
             wait = WebDriverWait(driver, timeout_wait)
             wait.until(EC.element_to_be_clickable((By.XPATH, f'/html/body/div[4]/div/div/div/main/div[2]/div[4]')))
 
@@ -81,7 +159,7 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
             text = driver.find_elements('xpath', f'/html/body/div[4]/div/div/div/main/div[2]/div[4]')[-1].text
 
             # Get rid of the right panel
-            text_1 = text.split(user_name)[0]
+            text_1 = text.split(config.UPWORK_USER_NAME)[0]
             # Get rid of the top panel
             text_2 = text_1.split('Ordered by most relevant.')[-1]
             job_posts = text_2.split('Posted')[1:]
@@ -103,7 +181,7 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
                 cursor.execute('SELECT COUNT(*) FROM jobs WHERE job_id = ?', (job_id,))
                 count = cursor.fetchone()[0]
                 if count > 0:
-                    print(f'    Job ID #{job_id} already exists. Updating job proposals...')
+                    logger.info(f'    Job ID #{job_id} already exists. Updating job proposals...')
                     updated_proposals = job_details.get('job_proposals')
                     # Update the job_proposals column
                     cursor.execute('UPDATE jobs SET job_proposals = ?, job_url = ? WHERE job_id = ?', (
@@ -114,7 +192,7 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
                     job_description = job_details.get('job_description')
                     job_tags = job_details.get('job_tags')
                     job_proposals = job_details.get('job_proposals')
-                    print(f'Storing `{job_details.get("job_title")}` job in database')
+                    logger.info(f'Storing `{job_details.get("job_title")}` job in database')
                     cursor.execute(
                         'INSERT INTO jobs (job_id, job_url, job_title, posted_date, job_description, job_tags, '
                         'job_proposals) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -122,54 +200,22 @@ def main(chrome_version, user_name, num_hours, pause_to_login):
                 conn.commit()
                 counter += 1
 
-            # Close connection to db
-            print('Closing connection to database')
-            cursor.close()
-            conn.close()
+            # Close the browser
+            logger.info('Closing browser...')
+            driver.quit()
 
-            # Calculate the new datetime by adding n hours to the current datetime
-            formatted_datetime = (
-                    datetime.now() + timedelta(hours=num_hours)
-            ).strftime("%d %b %Y %I:%M%p")
-            print(f"Scraping again at {formatted_datetime}")
-
-            # Sleep for the refresh interval before the next iteration
-            time.sleep(refresh_interval)
-
-            # Refresh page
-            print('Refreshing page')
-            driver.refresh()
-
-            # Reconnecting to database
-            print('Reconnecting to database')
-            conn, cursor = connect_to_db()
-
-        return True  # This is unreachable but we are leaving it here anyway
+        else:
+            logger.error("Couldn't load driver")
 
     except Exception as e:
-        print(e)
+        logger.error(e)
         return False
 
     finally:
+        logger.info('Closing connection to database')
         cursor.close()
         conn.close()
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Scrape jobs from Upwork's best matches.")
-    parser.add_argument('--chrome_version', '-v', type=int, default=90, help='Chrome version to use.')
-    parser.add_argument('--hours', '-H', type=int, default=4,
-                        help='Interval in hours between scraping jobs. Default is 4 hours.')
-    parser.add_argument('--pause', '-P', type=int, default=60,
-                        help='Number of seconds to pause for manual login. Default is 60 seconds.')
-    parser.add_argument('--name', '-n', required=True,
-                        help='Your Upwork first name (case-sensitive). This argument is required.')
-
-    args = parser.parse_args()
-
-    name = args.name
-    hours = args.hours
-    pause = args.pause
-    version = args.chrome_version
-
-    main(version, name, hours, pause)
+    main()
