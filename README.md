@@ -174,6 +174,21 @@ In the following example the scraper will be launched every 6 hours. So it shoul
 ```commandline
 0 */6 * * * /path/to/your/UpworkScraper/bin/launch_upwork_scraper.sh
 ```
+
+You might have to add the following variables inside your crontab in order to launch the Chromedriver. See [here](https://stackoverflow.com/questions/50117377/selenium-with-chromedriver-doesnt-start-via-cron) for more info.
+```commandline
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin
+DISPLAY=:0   
+```
+
+The values above are just examples. You need to replace them by finding your own values by issuing:
+```
+echo $SHELL
+echo $PATH
+env | grep "DISPLAY"
+```
+
 ## TODO
 - Capture job URLs ✅
 - Capture job timestamp ✅
