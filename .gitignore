@@ -88,7 +88,7 @@ bin/
 *.log
 log/
 tmp/
-settings/
+config.py
 
 # Gunicorn
 run/
