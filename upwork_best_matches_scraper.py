@@ -53,7 +53,8 @@ def get_driver_with_retry(chrome_versions, max_attempts=3):
                 return uc.Chrome(options=options, version_main=chrome_version)
             except Exception as e:
                 logger.error(f"Failed to launch Chrome driver with version {chrome_version}. Retrying...")
-    logger.error(f"All attempts failed for all Chrome versions within {max_attempts} attempts. Unable to launch Chrome driver.")
+    logger.error(f"All attempts failed for all Chrome versions within {max_attempts} attempts. Unable to launch "
+                 f"Chrome driver.")
     return None
 
 
