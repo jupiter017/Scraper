@@ -3,9 +3,9 @@
 
 ---
 
-Upwork Scraper is designed to automate the process of scraping job postings from Upwork's best matches. It utilizes Selenium for web scraping and interacts with the Upwork website to extract job details, including job titles, descriptions, and proposals. The script then stores the extracted data in a SQLite database for easy access and retrieval.
+Upwork Scraper is designed to automate the process of scraping job postings from **Upwork Best Matches**. It utilizes Selenium for web scraping and interacts with the Upwork website to extract job details, including job titles, descriptions, and proposals. The script then stores the extracted data in a SQLite database for easy access and retrieval.
 
-Users can customize the interval between scraping jobs and the pause duration for manual login according to their preferences. The script provides a streamlined solution for users who want to efficiently search for new job opportunities on Upwork without the hassle of manually browsing through job listings.
+The script provides a streamlined solution for users who want to efficiently search for new job opportunities on Upwork without the hassle of manually browsing through job listings.
 
 ---
 ## Benefits
@@ -18,7 +18,6 @@ Users can customize the interval between scraping jobs and the pause duration fo
 
 - **Automated Scraping:** Automatically scrolls through job postings on Upwork and extracts relevant job details.
 - **Database Integration:** Stores job details in a SQLite database for easy access and retrieval.
-- **Manual Login Support:** Includes a pause option for manual login, allowing users to authenticate before scraping.
 
 
 ## Disclaimer
@@ -86,48 +85,104 @@ This program has been tested and verified to work correctly in Python 3.11.
     pip install -r requirements.txt
     ```
 
-## Usage
+## Configuration file
 
+Create a folder named `settings` and add a __init__.py file inside it. 
+
+```
+settings/__init__.py
+```
+
+Inside the `settings` folder put a `config.py` file with the following content (adjust to your needs) and save the file.
+
+```commandline
+# Upwork credentials
+UPWORK_USER_NAME = "John"
+UPWORK_USERNAME = "john@doe.com"
+UPWORK_PASSWORD = "p455w0rD"
+
+# Chrome driver settings
+CHROME_VERSIONS = [
+    90,
+    123,
+]
+MAX_ATTEMPTS = 3
+
+```
+
+**Configuration**
+* UPWORK_USER_NAME: Replace `John` with the **first name** shown next to your profile picture on the right side panel. So if the name shown next to your profile pic says "John Smith" provide the script with `John`.
+ Login and navigate to [Upwork Best Matches](https://www.upwork.com/nx/find-work/best-matches) to double-check what is the first name of your full name that appears on your profile description. 
+* UPWORK_USERNAME: Your Upwork username or email.
+* UPWORK_PASSWORD: Your Upwork password. 
+* CHROME_VERSIONS: The Chrome versions installed in your system. No need to put the whole version number. So if your Chrome version is 90.0.4430.212, you just need to put 90 in the list. 
+* MAX_ATTEMPTS: Max number of attempts Selenium will try to launch the Chromedriver.
+
+
+### Error: from session not created: This version of ChromeDriver only supports Chrome version 96 # or what ever version
+
+This is an [annoying bug](https://github.com/ultrafunkamsterdam/undetected-chromedriver) because you might encounter it at random times. Sometimes a Chrome version works, sometimes it doesn't. To get around this increase the MAX_ATTEMPTS value or try installing in your system and adding another Chrome version to the CHROME_VERSIONS list. Upwork Scraper will attempt to login with all versions available until it reaches max number of attempts.
+
+
+## Usage
 
 Run Upwork Scraper with the following command:
 
 ```bash
-python scraper.py --name YOUR_NAME
-```
-
-IMPORTANT: Replace `YOUR_NAME` with the **first name** shown next to your profile picture on the right side panel. So if the name shown next to your profile pic says "John Smith" provide the script with `John`.
- Login and navigate to [best matches](https://www.upwork.com/nx/find-work/best-matches) to double check what is the first name of your full name that appears on your profile description. 
-
-Optional arguments:
-* --chrome_version, -v: Chrome version to use.
-* --hours, -H: Interval in hours between scraping jobs. Default is 4 hours.  
-* --pause, -P: Number of seconds to pause for manual login. Default is 180 seconds.
-
-Examples:
-
-```
-# John will scrape his best matches every 4 hours (default) with 3 minutes (default) for manual login in Chrome version 90 (default).
-python scraper.py --name "John"
-
-# Ruby will scrape her best matches every 10 hours with 1 minute for manual login, using Chrome version 123.
-python scraper.py --name "Ruby" -P 60 -H 10 -v 123
+python upwork_best_matches_scraper.py
 ```
 
 ## Functionality
 Upwork Scraper performs the following tasks:
 
-1. Goes to the Upwork login page (you need to perform a manual login).
-2. Scrapes job postings from Upwork's best matches page.
+1. Goes to the Upwork login page and logs you in.
+2. Scrapes job postings from Upwork Best Matches page.
 3. Parses job details and stores them in a SQLite database.
-4. Refreshes the page after a specified interval and continues scraping.
+
+## Automate execution of script with a Cron job
+
+You can launch Upwork scraper via a bash script as a cron job. 
+
+### Bash script
+
+Create a `launch_upwork_scraper.sh` file and put it inside a `bin` folder in the project directory.
+
+```commandline
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+parent="$(dirname "$DIR")"
+
+# Activate virtualenv
+source /path/to/your/venv/activate
+
+# Run
+nohup /path/to/your/venv/bin/python "$parent/upwork_best_matches_scraper.py" > /dev/null 2>&1 &
+```
+^ Edit the paths according to your virtual environment location.
+
+Make the bash script executable:
+```commandline
+chmod +x bin/launch_upwork_scraper.sh
+```
+
+### Crontab
+
+Edit your crontab to schedule the execution of the bash script. 
+
+In the following example the scraper will be launched every 6 hours. So it should be run at minute 0 past every 6th hour. This means that the script will be run at 12:00 AM, 6:00 AM, 12:00 PM, and 6:00 PM every day
+
+```commandline
+0 */6 * * * /path/to/your/UpworkScraper/bin/launch_upwork_scraper.sh
+```
+## TODO
+- Capture job URLs ✅
+- Capture job timestamp ✅
+- Load more jobs when reaching the bottom of the page after scrolling down.
+
 
 ## Contributing
 Contributions are welcome! If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request.
 
-## TODO
-- Capture job URLs ✅
-- Capture job timestamp ✅
-- Load more jobs
 
 ## Copyright and licenses
 Copyright © 2024 roperi. 
