@@ -45,6 +45,16 @@ def calculate_posted_datetime(timestamp):
     return posted_datetime
 
 
+def clean_job_proposals(job_proposals_text):
+    if 'freelancers' in job_proposals_text:
+        job_proposals = job_proposals_text.replace('Proposals: ', '').split(' Nu')[0]
+    elif ' ago' in job_proposals_text:  # Job is probably no longer available and instead of proposals shows "days ago"
+        job_proposals = ''
+    else:
+        job_proposals = job_proposals_text.replace('Proposals: ', '').replace('Load More Jobs', '')
+    return job_proposals
+
+
 def parse_job_details(r):
     """
     Parse job details from a given row of data.
@@ -55,15 +65,11 @@ def parse_job_details(r):
     Returns:
     - dict: A dictionary containing parsed job details.
     """
-    if 'freelancers' in r[-2]:
-        job_proposals = r[-2].replace('Proposals: ', '').split(' Nu')[0]
-    else:
-        job_proposals = r[-2].replace('Proposals: ', '').replace('Load More Jobs', '')
     d = {
         'posted_date': calculate_posted_datetime(r[0]),
         'job_title': r[1],
         'job_description': r[5],
-        'job_proposals': job_proposals
+        'job_proposals': clean_job_proposals(r[-2])
     }
     skills = r[6:-6]
     if 'more' in skills:
