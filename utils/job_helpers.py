@@ -55,11 +55,15 @@ def parse_job_details(r):
     Returns:
     - dict: A dictionary containing parsed job details.
     """
+    if 'freelancers' in r[-2]:
+        job_proposals = r[-2].replace('Proposals: ', '').split(' Nu')[0]
+    else:
+        job_proposals = r[-2].replace('Proposals: ', '').replace('Load More Jobs', '')
     d = {
         'posted_date': calculate_posted_datetime(r[0]),
         'job_title': r[1],
         'job_description': r[5],
-        'job_proposals': r[-2].replace('Proposals: ', '')
+        'job_proposals': job_proposals
     }
     skills = r[6:-6]
     if 'more' in skills:
