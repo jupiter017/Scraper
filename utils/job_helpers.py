@@ -73,9 +73,9 @@ def parse_job_details(r):
         skills.remove('Next skills. Update list')
     if 'Skip skills' in skills:
         skills.remove('Skip skills')
-    if "  Payment verified":
+    if "  Payment verified" in skills:
         skills.remove("  Payment verified")
-    if "  Payment unverified":
+    if "  Payment unverified" in skills:
         skills.remove("  Payment unverified")
     d['job_tags'] = json.dumps(skills)
     d['job_id'] = generate_job_id(r[1])
