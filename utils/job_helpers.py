@@ -51,7 +51,8 @@ def clean_job_proposals(job_proposals_text):
     elif ' ago' in job_proposals_text:  # Job is probably no longer available and instead of proposals shows "days ago"
         job_proposals = ''
     else:
-        job_proposals = job_proposals_text.replace('Proposals: ', '').replace('Load More Jobs', '')
+        job_proposals = job_proposals_text.replace(
+            'Proposals: ', '').replace('Load More Jobs', '').replace('Featured', '')
     return job_proposals
 
 
