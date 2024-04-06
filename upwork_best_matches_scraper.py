@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+from datetime import datetime
 import logging
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
@@ -185,8 +186,8 @@ def main():
                     logger.info(f'    Job ID #{job_id} already exists. Updating job proposals...')
                     updated_proposals = job_details.get('job_proposals')
                     # Update the job_proposals column
-                    cursor.execute('UPDATE jobs SET job_proposals = ?, job_url = ? WHERE job_id = ?', (
-                        updated_proposals, job_url, job_id))
+                    cursor.execute('UPDATE jobs SET job_proposals = ?, job_url = ?, updated_at = ? WHERE job_id = ?', (
+                        updated_proposals, job_url, datetime.now(), job_id))
                 else:
                     posted_date = job_details.get('posted_date')
                     job_title = job_details.get('job_title')
