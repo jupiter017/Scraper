@@ -42,6 +42,9 @@ def calculate_posted_datetime(timestamp):
     elif 'week' in timestamp:  # Adding the case for weeks
         weeks_ago = int(re.findall(r'\d+', timestamp)[0])
         posted_datetime = now - timedelta(weeks=weeks_ago)
+    elif 'last week' in timestamp:
+        weeks_ago = 1
+        posted_datetime = now - timedelta(weeks=weeks_ago)
     else:
         # Handle other cases if needed
         posted_datetime = now
