@@ -39,11 +39,11 @@ def calculate_posted_datetime(timestamp):
     elif 'day' in timestamp:
         days_ago = int(re.findall(r'\d+', timestamp)[0])
         posted_datetime = now - timedelta(days=days_ago)
-    elif 'week' in timestamp:  # Adding the case for weeks
-        weeks_ago = int(re.findall(r'\d+', timestamp)[0])
-        posted_datetime = now - timedelta(weeks=weeks_ago)
     elif 'last week' in timestamp:
         weeks_ago = 1
+        posted_datetime = now - timedelta(weeks=weeks_ago)
+    elif 'week' in timestamp:  # Adding the case for weeks
+        weeks_ago = int(re.findall(r'\d+', timestamp)[0])
         posted_datetime = now - timedelta(weeks=weeks_ago)
     else:
         # Handle other cases if needed
@@ -62,23 +62,7 @@ def clean_job_proposals(job_proposals_text):
     return job_proposals
 
 
-def parse_job_details(r):
-    """
-    Parse job details from a given row of data.
-
-    Parameters:
-    - r (list): A list containing job details.
-
-    Returns:
-    - dict: A dictionary containing parsed job details.
-    """
-    d = {
-        'posted_date': calculate_posted_datetime(r[0]),
-        'job_title': r[1],
-        'job_description': r[5],
-        'job_proposals': clean_job_proposals(r[-2])
-    }
-    skills = r[6:-6]
+def clean_skills(skills):
     if 'more' in skills:
         skills.remove('more')
         skills.pop(0)
@@ -90,6 +74,24 @@ def parse_job_details(r):
         skills.remove("  Payment verified")
     if "  Payment unverified" in skills:
         skills.remove("  Payment unverified")
-    d['job_tags'] = json.dumps(skills)
-    d['job_id'] = generate_job_id(r[1])
-    return d
+    return skills
+
+
+def parse_job_details(r):
+    """
+    Parse job details from a given row of data.
+
+    Parameters:
+    - r (list): A list containing job details.
+
+    Returns:
+    - dict: A dictionary containing parsed job details.
+    """
+    return {
+        'posted_date': calculate_posted_datetime(r[0]),
+        'job_title': r[1],
+        'job_description': r[5],
+        'job_proposals': clean_job_proposals(r[-2]),
+        'job_tags': json.dumps(clean_skills(r[6:-6])),
+        'job_id': generate_job_id(r[1])
+    }
