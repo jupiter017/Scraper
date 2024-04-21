@@ -170,7 +170,9 @@ def main():
             job_links = driver.find_elements("xpath", "//a[contains(@href, '/jobs/')]")
             job_urls = [link.get_attribute("href") for link in job_links
                         if 'ontology_skill_uid' not in link.get_attribute("href")
-                        and 'search/saved' not in link.get_attribute("href")]
+                        and 'search/saved' not in link.get_attribute("href")
+                        and 'search/jobs/saved' not in link.get_attribute("href")
+                        ]
 
             # Scrape jobs
             print('Scraping jobs...')
@@ -186,8 +188,8 @@ def main():
                     logger.info(f'    Job ID #{job_id} already exists. Updating job proposals...')
                     updated_proposals = job_details.get('job_proposals')
                     # Update the job_proposals column
-                    cursor.execute('UPDATE jobs SET job_proposals = ?, job_url = ?, updated_at = ? WHERE job_id = ?', (
-                        updated_proposals, job_url, datetime.now(), job_id))
+                    cursor.execute('UPDATE jobs SET job_proposals = ?, updated_at = ? WHERE job_id = ?', (
+                        updated_proposals, datetime.now(), job_id))
                 else:
                     posted_date = job_details.get('posted_date')
                     job_title = job_details.get('job_title')
