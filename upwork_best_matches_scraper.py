@@ -155,15 +155,15 @@ def main():
             # Wait for element to load
             logger.info(f'Waiting for element to load (max timeout set to {timeout_wait} seconds)...')
             wait = WebDriverWait(driver, timeout_wait)
-            wait.until(EC.element_to_be_clickable((By.XPATH, f'/html/body/div[4]/div/div/div/main/div[2]/div[4]')))
+            wait.until(EC.element_to_be_clickable((By.XPATH, f'/html/body/div[4]/div/div/div/main/div[3]/div[4]')))
 
-            # Get text element
-            text = driver.find_elements('xpath', f'/html/body/div[4]/div/div/div/main/div[2]/div[4]')[-1].text
-
+            # Get all text as a wall of text (including user's mini bio on the top-right panel)
+            text = driver.find_elements('xpath', f'/html/body/div[4]/div/div/div/main/div[3]/div[4]')[-1].text
             # Get rid of the right panel
             text_1 = text.split(config.UPWORK_USER_NAME)[0]
             # Get rid of the top panel
             text_2 = text_1.split('Ordered by most relevant.')[-1]
+            # Get all job posts
             job_posts = text_2.split('Posted')[1:]
 
             # Get urls
