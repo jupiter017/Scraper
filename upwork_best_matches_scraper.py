@@ -99,8 +99,8 @@ def main():
             username_input = WebDriverWait(driver, 30).until(
                 EC.visibility_of_element_located(
                     (By.XPATH,
-                     "/html/body/div[4]/div/div/div/main/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div/div/"
-                     "input")
+                     "/html/body/div[4]/div/div/div/main/div/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div/"
+                     "div/input")
                 )
             )
             username_input.send_keys(config.UPWORK_USERNAME)
@@ -108,8 +108,8 @@ def main():
             username_field = WebDriverWait(driver, 30).until(
                 EC.visibility_of_element_located(
                     (By.XPATH,
-                     "/html/body/div[4]/div/div/div/main/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div/div/"
-                     "input")
+                     "/html/body/div[4]/div/div/div/main/div/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div/"
+                     "div/input")
                 )
             )
             username_field.send_keys(Keys.ENTER)
@@ -118,7 +118,7 @@ def main():
             password_input = WebDriverWait(driver, 30).until(
                 EC.visibility_of_element_located(
                     (By.XPATH,
-                     "/html/body/div[4]/div/div/div/main/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div"
+                     "/html/body/div[4]/div/div/div/main/div/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div"
                      "/input")
                 )
 
@@ -128,15 +128,15 @@ def main():
             password_field = WebDriverWait(driver, 30).until(
                 EC.visibility_of_element_located(
                     (By.XPATH,
-                     "/html/body/div[4]/div/div/div/main/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div"
+                     "/html/body/div[4]/div/div/div/main/div/div/div[2]/div[2]/form/div/div/div[1]/div[3]/div/div/div"
                      "/input")
                 )
 
             )
             password_field.send_keys(Keys.ENTER)
 
-            logger.info('Pausing 10 seconds for credentials verification')
-            time.sleep(10)
+            logger.info(f'Pausing for {config.VERIFICATION_PAUSE} seconds for credentials verification')
+            time.sleep(config.VERIFICATION_PAUSE)
 
             # Go to target url
             logger.info("Redirecting to Best Matches")
