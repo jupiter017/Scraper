@@ -5,6 +5,7 @@ import sys
 import time
 from datetime import datetime
 import logging
+import random
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -43,20 +44,84 @@ logger.addHandler(ch)
 
 # FUNCTIONS
 
-def get_driver_with_retry(chrome_versions, max_attempts=3):
+def get_driver_with_retry(chrome_versions, max_attempts=3, headless=True):
+    """
+    Simplified driver creation based on working test configuration
+    """
+    logger.info("Creating Chrome driver...")
+    
     for attempt in range(max_attempts):
-        for chrome_version in chrome_versions:
-            logger.info(f'Trying with Chrome version {chrome_version}')
-            try:
-                logger.info(f'Attempt #{attempt+1}/{max_attempts}')
-                options = uc.ChromeOptions()
-                options.headless = False
-                return uc.Chrome(options=options, version_main=chrome_version)
-            except Exception as e:
-                logger.error(f"Failed to launch Chrome driver with version {chrome_version}: {e}. Retrying...")
-    logger.error(f"All attempts failed for all Chrome versions within {max_attempts} attempts. Unable to launch "
-                 f"Chrome driver.")
+        try:
+            logger.info(f'Attempt #{attempt+1}/{max_attempts}')
+            options = uc.ChromeOptions()
+            
+            # Use the same minimal options that worked in the test
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            
+            # Use a different port to avoid conflicts with existing Chrome instances
+            debug_port = random.randint(9000, 9999)
+            options.add_argument(f'--remote-debugging-port={debug_port}')
+            
+            if headless:
+                options.add_argument('--headless')
+                options.add_argument('--disable-gpu')
+                options.add_argument('--window-size=1920,1080')
+            
+            # Disable some features that might cause issues
+            options.add_argument('--disable-extensions')
+            options.add_argument('--disable-plugins')
+            options.add_argument('--disable-web-security')
+            
+            logger.info(f"Using debug port: {debug_port}")
+            
+            # Let undetected_chromedriver auto-detect the version
+            driver = uc.Chrome(options=options)
+            
+            logger.info(f"Successfully launched Chrome driver (version: {driver.capabilities.get('browserVersion', 'Unknown')})")
+            return driver
+            
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"Attempt {attempt+1} failed: {error_msg[:200]}...")
+            
+            # If it's a port conflict, try a different approach
+            if "cannot connect to chrome" in error_msg.lower():
+                logger.warning("Port conflict detected, trying different port...")
+            
+            if attempt < max_attempts - 1:
+                logger.info("Retrying in 3 seconds...")
+                time.sleep(3)
+            continue
+                
+    logger.error("All attempts failed. Unable to launch Chrome driver.")
     return None
+
+
+def check_environment():
+    """
+    Check if running in an EC2/headless environment and log system information.
+    """
+    import platform
+    logger.info(f"System: {platform.system()} {platform.release()}")
+    logger.info(f"Python version: {platform.python_version()}")
+    
+    # Check if display is available
+    display_available = os.environ.get('DISPLAY') is not None
+    logger.info(f"Display available: {display_available}")
+    
+    # Check if running in EC2
+    try:
+        import requests
+        response = requests.get('http://169.254.169.254/latest/meta-data/instance-id', timeout=2)
+        if response.status_code == 200:
+            logger.info("Running on AWS EC2 instance")
+            return True
+    except:
+        pass
+    
+    logger.info("Not running on AWS EC2 or EC2 metadata service unavailable")
+    return False
 
 
 def main():
@@ -73,6 +138,8 @@ def main():
     message and returns False.
     """
     try:
+        # Check environment
+        is_ec2 = check_environment()
         # Connect to database
         conn, cursor = connect_to_db()
 
@@ -81,7 +148,11 @@ def main():
 
         # Configure the undetected_chromedriver options
         logger.info('Launching driver')
-        driver = get_driver_with_retry(chrome_versions=config.CHROME_VERSIONS, max_attempts=config.MAX_ATTEMPTS)
+        driver = get_driver_with_retry(
+            chrome_versions=config.CHROME_VERSIONS, 
+            max_attempts=config.MAX_ATTEMPTS,
+            headless=True  # Use headless mode to avoid conflicts with existing Chrome
+        )
 
         if driver:
             # Login
@@ -209,10 +280,20 @@ def main():
             driver.quit()
 
         else:
-            logger.error("Couldn't load driver")
+            logger.error("Couldn't load driver. Possible causes:")
+            logger.error("1. Chrome is not installed on this system")
+            logger.error("2. Chrome version mismatch with undetected-chromedriver")
+            logger.error("3. Display/X11 issues in headless environment")
+            logger.error("4. Insufficient permissions to run Chrome")
+            logger.error("Solution suggestions:")
+            logger.error("- Install Google Chrome: sudo apt-get update && sudo apt-get install -y google-chrome-stable")
+            logger.error("- Try different Chrome versions in config.py")
+            logger.error("- Check Chrome installation: google-chrome --version")
+            return False
 
     except Exception as e:
-        logger.error(e)
+        logger.error(f"Unexpected error occurred: {str(e)}")
+        logger.error("Stack trace:", exc_info=True)
         return False
 
     finally:
